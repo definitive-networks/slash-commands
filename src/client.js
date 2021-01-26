@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 class Client {
   constructor(client, config) {
@@ -7,7 +8,7 @@ class Client {
   }
 
   async commands() {
-    const dir = this.config.commands.directory;
+    const dir = path.join(__dirname, '../../../', this.config.commands.directory);
     const folder = fs.readdirSync(dir);
     const subcategories = this.config.commands.subcategories;
     let commands = new Map();
@@ -35,7 +36,7 @@ class Client {
   };
   
   async findCommand(command_name) {
-    const dir = this.config.commands.directory;
+    const dir = path.join(__dirname, '../../../', this.config.commands.directory);
     const folder = fs.readdirSync(dir);
     const subcategories = this.config.commands.subcategories;
     let map = new Array();
@@ -92,6 +93,29 @@ class Client {
       command[1].post(this.client)
     }
     return commands;
+  }
+  
+  async deleteCommands(guild_ids = false, del_global = false) {
+    let deletedCommands = new Array();
+    if (guild_ids) {
+      let postedGuildCommands = new Array();
+      for (let guild_id of guild_ids) {
+        const guildCommands = await this.client.api.applications(this.client.user.id).guilds(guild_id).commands.get();
+        for (let i = 0; i < guildCommands.length; i++) {
+          this.client.api.applications(this.client.user.id).guilds(guild_id).commands(guildCommands[i].id).delete();
+        }
+        postedGuildCommands.push({ guild: guild_id, commands: guildCommands });
+      }
+      deletedCommands.push({ guilds: postedGuildCommands });
+    }
+    if (del_global) {
+      const postedGlobalCommands = await this.client.api.applications(this.client.user.id).commands.get();
+      for (let i = 0; i < postedGlobalCommands.length; i++) {
+        this.client.api.applications(this.client.user.id).commands(postedGlobalCommands[i].id).delete();
+      }
+      deletedCommands.push({ global: postedGlobalCommands });
+    }
+    return deletedCommands;
   }
 }
 
