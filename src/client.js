@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
+const isFile = fileName => { return fs.lstatSync(fileName).isFile() };
+const isFolder = folderName => { return fs.lstatSync(folderName).isDirectory() };
+
 class Client {
   constructor(client, config) {
     this.client = client;
@@ -9,64 +12,52 @@ class Client {
 
   async commands(subcategory = false) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
-    const folder = fs.readdirSync(dir);
-    const subcategories = this.config.commands.subcategories;
+    const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
+    const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
+
     let commands = new Map();
-    switch (true) {
 
-      case subcategories:
-        for (let subfolderRef of folder) {
-          if (!subcategory || (subcategory && subcategory == subfolderRef)) {
-            const subfolder = fs.readdirSync(`${dir}/${subfolderRef}`);
-            for (let file of subfolder) {
-              if (file === "index.js") return;
-              let command = require(`${dir}/${folder}/${file}`);
-              commands.set(command.name, command);
-            }
-          }
-        }
-        return commands;
-        break;
-
-      default:
-        for (let file of folder) {
-          let command = require(`${dir}/${file}`);
+    for (var i = 0; i < files.length; i++) {
+      if (!subcategory) {
+        if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
+        let command = require(files[i]);
+        commands.set(command.name, command);
+      }
+    }
+    for (var i = 0; i < folders.length; i++) {
+      if (!subcategory || (subcategory && folders[i].includes(subcategory))) {
+        const subfiles = fs.readdirSync(folders[i]).map(file => { return path.join(folders[i], file) }).filter(isFile);
+        for (var x = 0; x < subfiles.length; x++) {
+          if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
+          let command = require(subfiles[x]);
           commands.set(command.name, command);
         }
-        return commands;
+      }
     }
+    return commands;
   };
 
   async findCommand(command_name) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
-    const folder = fs.readdirSync(dir);
-    const subcategories = this.config.commands.subcategories;
+    const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
+    const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
+
     let results = [];
-    switch (true) {
 
-      case subcategories:
-        for(let subfolderRef of folder) {
-          const subfolder = fs.readdirSync(`${dir}/${subfolderRef}`);
-          for (let file of subfolder) {
-            if (file === "index.js") return;
-            let command = require(`${dir}/${subfolderRef}/${file}`);
-            let expressionCheck = await command.expressionCheck(command_name);
-            if (expressionCheck.pass){
-              results.push(command)
-            }
-          }
-        }
-        break;
-
-      default:
-        for (let file of folder) {
-          if (file === "index.js") return;
-          let command = require(`${dir}/${file}`);
-          let expressionCheck = await command.expressionCheck(command_name);
-          if (expressionCheck.pass){
-            results.push(command)
-          }
-        }
+    for (var i = 0; i < files.length; i++) {
+      if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
+      let command = require(files[i]);
+      let expressionCheck = await command.expressionCheck(command_name);
+      if (expressionCheck.pass) results.push(command);
+    }
+    for (var i = 0; i < folders.length; i++) {
+      const subfiles = fs.readdirSync(folders[i]).map(file => { return path.join(folders[i], file) }).filter(isFile);
+      for (var x = 0; x < subfiles.length; x++) {
+        if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
+        let command = require(subfiles[x]);
+        let expressionCheck = await command.expressionCheck(command_name);
+        if (expressionCheck.pass) results.push(command);
+      }
     }
     return results[0];
   }
