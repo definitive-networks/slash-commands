@@ -7,66 +7,68 @@ class Client {
     this.config = config;
   }
 
-  async commands() {
+  async commands(subcategory = false) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
     const folder = fs.readdirSync(dir);
     const subcategories = this.config.commands.subcategories;
     let commands = new Map();
-    switch (subcategories) {
+    switch (true) {
 
-      case "true":
+      case subcategories:
         for (let subfolderRef of folder) {
-          const subfolder = fs.readdirSync(`${dir}/${subfolderRef}`);
-          for (let file of subfolder) {
-            if (file === "index.js") return;
-            let command = require.main.require(`${dir}/${folder}/${file}`);
-            commands.set(command.name, command);
+          if (!subcategory || (subcategory && subcategory == subfolderRef)) {
+            const subfolder = fs.readdirSync(`${dir}/${subfolderRef}`);
+            for (let file of subfolder) {
+              if (file === "index.js") return;
+              let command = require(`${dir}/${folder}/${file}`);
+              commands.set(command.name, command);
+            }
           }
         }
         return commands;
         break;
 
-      case "false":
+      default:
         for (let file of folder) {
-          let command = require.main.require(`${dir}/${file}`);
+          let command = require(`${dir}/${file}`);
           commands.set(command.name, command);
         }
         return commands;
     }
   };
-  
+
   async findCommand(command_name) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
     const folder = fs.readdirSync(dir);
     const subcategories = this.config.commands.subcategories;
-    let map = new Array();
-    switch (subcategories) {
+    let results = [];
+    switch (true) {
 
-      case "true":
+      case subcategories:
         for(let subfolderRef of folder) {
           const subfolder = fs.readdirSync(`${dir}/${subfolderRef}`);
           for (let file of subfolder) {
             if (file === "index.js") return;
-            let command = require.main.require(`${dir}/${subfolderRef}/${file}`);
+            let command = require(`${dir}/${subfolderRef}/${file}`);
             let expressionCheck = await command.expressionCheck(command_name);
             if (expressionCheck.pass){
-              map.push(command)
+              results.push(command)
             }
           }
         }
         break;
 
-      case "false":
+      default:
         for (let file of folder) {
           if (file === "index.js") return;
-          let command = require.main.require(`${dir}/${file}`);
+          let command = require(`${dir}/${file}`);
           let expressionCheck = await command.expressionCheck(command_name);
           if (expressionCheck.pass){
-            map.push(command)
+            results.push(command)
           }
         }
     }
-    return map[0];
+    return results[0];
   }
 
   async matchCommand(interaction){
@@ -74,16 +76,15 @@ class Client {
     const securityCheck = await command.securityCheck(interaction);
     switch (securityCheck.pass) {
       case true:
-      command.execute(interaction);
-      return {...command, securityCheck: "pass"};
-      break;
-    
+        command.execute(interaction);
+        return {...command, securityCheck: "pass"};
+        break;
       case false:
-      const user = await interaction.author();
-      const missingPermissions = (this.permissions || ['SEND_MESSAGES']).filter(p => !user.hasPermission(p));
-      interaction.responseType = 3;
-      interaction.sendEphemeral(`You are missing permissions to run this command: \`${permissionCheck.missingPermissions.join(' | ').replace(/_/g, ' ')}\``);
-      return {...command, securityCheck: "pass"};
+        const user = await interaction.author();
+        const missingPermissions = (this.permissions || ['SEND_MESSAGES']).filter(p => !user.hasPermission(p));
+        interaction.responseType = 3;
+        interaction.sendEphemeral(`You are missing permissions to run this command: \`${permissionCheck.missingPermissions.join(' | ').replace(/_/g, ' ')}\``);
+        return {...command, securityCheck: "pass"};
     }
   }
 
@@ -94,11 +95,11 @@ class Client {
     }
     return commands;
   }
-  
+
   async deleteCommands(guild_ids = false, del_global = false) {
-    let deletedCommands = new Array();
+    let deletedCommands = [];
     if (guild_ids) {
-      let postedGuildCommands = new Array();
+      let postedGuildCommands = [];
       for (let guild_id of guild_ids) {
         const guildCommands = await this.client.api.applications(this.client.user.id).guilds(guild_id).commands.get();
         for (let i = 0; i < guildCommands.length; i++) {
