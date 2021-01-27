@@ -11,7 +11,6 @@ index.js
 const config = {
 "commands": {
     "directory": "/path/to/commands", //path to commands folder
-    "subcategories": "false" //if commands are divided by folders change to "true"
   },
   "bot": {
     "token": "bot_token_here"
