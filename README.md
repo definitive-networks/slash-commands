@@ -32,14 +32,14 @@ client.once('ready', () => {
 client.ws.on('INTERACTION_CREATE', async request => {
   const interaction = new Slash.Interaction(client, request);
   //finds the matching slash command and executes it
-  slash.matchCommand(interaction); 
+  slash.matchCommand(interaction);
 })
 
 client.login(config.bot.token);
 ```
 
 ## Creating Commands
-##### A file for each command. All files should be contained in one folder or if files are separated by folders, all command folders should be under one command folder. 
+##### A file for each command. All files should be contained in one folder or if files are separated by folders, all command folders should be under one command folder.
 ```javascript
 commandOne.js
 
@@ -78,6 +78,15 @@ module.exports = new Slash.GuildCommand({
     interaction.sendMessage("hello");
   }
 })
+```
+
+## Current Modifications
+```js
+// Delete global and guild commands
+slash.deleteCommands(['613425648685547541', '197038439483310086'], true);
+
+// Get subcategory commands (assumes there's a utilities folder in your commands directory)
+slash.commands('utilities');
 ```
 ## Resources
 
