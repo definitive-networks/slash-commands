@@ -10,7 +10,7 @@ class Client {
     this.config = config;
   }
 
-  async commands(subcategory = false) {
+  async commands(category = false) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
     const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
     const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
@@ -18,14 +18,14 @@ class Client {
     let commands = new Map();
 
     for (var i = 0; i < files.length; i++) {
-      if (!subcategory) {
+      if (!category || (category && category == 'base')) {
         if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
         let command = require(files[i]);
         commands.set(command.name, { category: 'base', command });
       }
     }
     for (var i = 0; i < folders.length; i++) {
-      if (!subcategory || (subcategory && folders[i].includes(subcategory))) {
+      if (!category || (category && folders[i].includes(category))) {
         const subfiles = fs.readdirSync(folders[i]).map(file => { return path.join(folders[i], file) }).filter(isFile);
         for (var x = 0; x < subfiles.length; x++) {
           if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
@@ -36,6 +36,15 @@ class Client {
     }
     return commands;
   };
+
+  async categories() {
+    const commands = await this.commands();
+    const categories = [];
+    for (let command of commands) {
+      categories.push(command[1].category);
+    }
+    return [...new Set(categories)];
+  }
 
   async findCommand(command_name) {
     const dir = path.join(__dirname, '../../../', this.config.commands.directory);
