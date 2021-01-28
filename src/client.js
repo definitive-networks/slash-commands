@@ -21,7 +21,7 @@ class Client {
       if (!subcategory) {
         if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
         let command = require(files[i]);
-        commands.set(command.name, command);
+        commands.set(command.name, { category: 'base', command });
       }
     }
     for (var i = 0; i < folders.length; i++) {
@@ -30,7 +30,7 @@ class Client {
         for (var x = 0; x < subfiles.length; x++) {
           if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
           let command = require(subfiles[x]);
-          commands.set(command.name, command);
+          commands.set(command.name, { category: path.basename(folders[i]), command });
         }
       }
     }
@@ -83,7 +83,7 @@ class Client {
     const client = this.client;
     let commands = await this.commands();
     for (let command of commands) {
-      command[1].post(client);
+      command[1].command.post(client);
     }
     const globalCommands = await client.api.applications(client.user.id).commands.get();
     for (let command of globalCommands){
