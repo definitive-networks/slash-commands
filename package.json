@@ -19,13 +19,19 @@
     "url": "git+https://github.com/xlyr-on/da-slash.git"
   },
   "dependencies": {
-    "discord.js": "^12.5.1"
+    "btoa": "^1.2.1",
+    "discord-interactions": "^1.3.3",
+    "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.1",
+    "slash-commands": "^1.3.1"
   },
   "bugs": {
     "url": "https://github.com/xlyr-on/da-slash/issues"
   },
   "homepage": "https://github.com/xlyr-on/da-slash#readme",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./bot.js"
   }
 }
