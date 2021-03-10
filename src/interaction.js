@@ -64,20 +64,23 @@ class Interaction {
     const type = this.responseType;
     const data = {
       type: type,
-      data: await this.createAPIMessage(embed)
+      data: {
+        embeds: [embed]
+      }
     }
     client.api.interactions(request.id, request.token).callback.post({data});
     return {...data};
   }
 
-  async createAPIMessage(embed) {
-    const client = this.client;
-    const request = this.request;
-    const apiMessage = await Discord.APIMessage.create(client.channels.resolve(request.channel_id), embed)
-      .resolveData()
-      .resolveFiles()
-    return { ...apiMessage.data, files: apiMessage.files };
-  }
+  // async createAPIMessage(embed) {
+  //   const client = this.client;
+  //   const request = this.request;
+  //   const apiMessage = await Discord.APIMessage.create(client.channels.resolve(request.channel_id), embed)
+  //     .resolveData()
+  //     .resolveFiles()
+  //   console.log(apiMessage);
+  //   return { ...apiMessage.data, files: apiMessage.files };
+  // }
 }
 
 module.exports = Interaction;
