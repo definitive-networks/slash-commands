@@ -78,7 +78,6 @@ class Client {
       case true:
         command.execute(interaction);
         return {...command, securityCheck: "pass"};
-        break;
       case false:
         const user = await interaction.author();
         const missingPermissions = (this.permissions || ['SEND_MESSAGES']).filter(p => !user.hasPermission(p));
