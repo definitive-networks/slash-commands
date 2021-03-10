@@ -13,8 +13,7 @@ class GlobalCommand extends Command{
     return id;
   }
 
-  async post(client, guilds = this.guilds) {
-    const guildOnly = this.guildOnly;
+  async post(client) {
     const data = {
       name: this.name,
       description: this.description,
@@ -27,7 +26,6 @@ class GlobalCommand extends Command{
 
   async delete(client) {
     const command = await this.id(client);
-    const guildOnly = this.guildOnly;
     client.api.applications(client.user.id).commands(command.id).delete()
     .catch(console.error)
     return this;
