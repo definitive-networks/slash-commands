@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const GlobalCommand = require('./global-command');
+const GuildCommand = require('./guild-command');
 
 const isFile = fileName => { return fs.lstatSync(fileName).isFile() };
 const isFolder = folderName => { return fs.lstatSync(folderName).isDirectory() };
@@ -10,7 +12,7 @@ class Client {
     this.config = config;
   }
 
-  async commands(category = false) {
+  async getCommands(category = false) {
     const dir = path.join(path.resolve(), this.config.commands.directory);
     const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
     const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
@@ -21,7 +23,8 @@ class Client {
       if (!category || (category && category == 'base')) {
         if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
         let command = require(files[i]);
-        commands.set(command.name, { category: 'base', command });
+        let commandObj = !command.guilds || command.guilds == [] ? new GlobalCommand(command) : new GuildCommand(command);
+        commands.set(command.name, { category: 'base', commandObj });
       }
     }
     for (var i = 0; i < folders.length; i++) {
@@ -30,7 +33,8 @@ class Client {
         for (var x = 0; x < subfiles.length; x++) {
           if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
           let command = require(subfiles[x]);
-          commands.set(command.name, { category: path.basename(folders[i]), command });
+          let commandObj = !command.guilds || command.guilds == [] ? new GlobalCommand(command) : new GuildCommand(command);
+          commands.set(command.name, { category: path.basename(folders[i]), commandObj });
         }
       }
     }
@@ -38,7 +42,7 @@ class Client {
   };
 
   async categories() {
-    const commands = await this.commands();
+    const commands = await this.getCommands();
     const categories = [];
     for (let command of commands) {
       categories.push(command[1].category);
@@ -47,40 +51,20 @@ class Client {
   }
 
   async findCommand(command_name) {
-    const dir = path.join(path.resolve(), this.config.commands.directory);
-    const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
-    const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
-
-    let results = [];
-
-    for (var i = 0; i < files.length; i++) {
-      if (files[i].endsWith('index.js') || !files[i].endsWith('js')) return;
-      let command = require(files[i]);
-      let expressionCheck = await command.expressionCheck(command_name);
-      if (expressionCheck.pass) results.push(command);
-    }
-    for (var i = 0; i < folders.length; i++) {
-      const subfiles = fs.readdirSync(folders[i]).map(file => { return path.join(folders[i], file) }).filter(isFile);
-      for (var x = 0; x < subfiles.length; x++) {
-        if (subfiles[x].endsWith('index.js') || !subfiles[x].endsWith('js')) return;
-        let command = require(subfiles[x]);
-        let expressionCheck = await command.expressionCheck(command_name);
-        if (expressionCheck.pass) results.push(command);
-      }
-    }
-    return results[0];
+    const commands = await this.getCommands();
+    const command = await commands.get(command_name);
+    
+    return command;
   }
 
   async matchCommand(interaction){
     const command = await this.findCommand(interaction.request.data.name);
-    const securityCheck = await command.securityCheck(interaction);
+    const securityCheck = await command.commandObj.securityCheck(interaction);
     switch (securityCheck.pass) {
       case true:
-        command.execute(interaction);
+        command.commandObj.execute(interaction);
         return {...command, securityCheck: "pass"};
       case false:
-        const user = await interaction.author();
-        const missingPermissions = (this.permissions || ['SEND_MESSAGES']).filter(p => !user.hasPermission(p));
         interaction.responseType = 3;
         interaction.sendEphemeral(`You are missing permissions to run this command: \`${permissionCheck.missingPermissions.join(' | ').replace(/_/g, ' ')}\``);
         return {...command, securityCheck: "pass"};
@@ -89,9 +73,9 @@ class Client {
 
   async postCommands() {
     const client = this.client;
-    let commands = await this.commands();
+    let commands = await this.getCommands();
     for (let command of commands) {
-      command[1].command.post(client);
+      command[1].commandObj.post(client);
     }
     const globalCommands = await client.api.applications(client.user.id).commands.get();
     for (let command of globalCommands){
