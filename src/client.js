@@ -81,8 +81,7 @@ class Client {
     for (let command of globalCommands){
       const match = await this.findCommand(command.name);
       if (match === undefined) {
-        client.api.applications(client.user.id).commands(command.id).delete()
-        .catch(console.error)
+        client.api.applications(client.user.id).commands(command.id).delete();
       };
     }
     const guilds = await client.guilds.cache;
@@ -92,7 +91,7 @@ class Client {
         for (let command of guildCommands){
           const match = await this.findCommand(command.name);
           if (match === undefined) {
-            client.api.applications(client.user.id).guilds(guild[1].id).commands(command.id).delete().catch(console.error)
+            client.api.applications(client.user.id).guilds(guild[1].id).commands(command.id).delete();
           };
         }
       };
