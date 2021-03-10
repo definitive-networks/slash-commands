@@ -47,7 +47,7 @@ class Client {
   }
 
   async findCommand(command_name) {
-    const dir = path.join(__dirname, '../../../', this.config.commands.directory);
+    const dir = path.join(path.resolve(), this.config.commands.directory);
     const files = fs.readdirSync(dir).map(file => { return path.join(dir, file) }).filter(isFile);
     const folders = fs.readdirSync(dir).map(folder => { return path.join(dir, folder) }).filter(isFolder);
 
